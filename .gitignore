@@ -41,3 +41,10 @@ $RECYCLE.BIN/
 Network Trash Folder
 Temporary Items
 .apdisk
+obj
+bin
+obj
+bin
+/RabbitMQFirstSample/Sources/RabbitMQ.ServiceModel.dll
+/RabbitMQFirstSample/Sources/RabbitMQ.Client.dll
+/RabbitMQFirstSample/RabbitMQFirstSample.v11.suo
