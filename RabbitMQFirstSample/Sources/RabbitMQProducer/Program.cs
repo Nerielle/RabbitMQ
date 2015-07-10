@@ -15,14 +15,20 @@ namespace RabbitMQProducer
                 {
                     channel.QueueDeclare("hello", false, false, false, null);
 
-                    string message = "Hello World!";
+                    string message = GetMessage(args);
                     byte[] body = Encoding.UTF8.GetBytes(message);
-
-                    channel.BasicPublish("", "hello", null, body);
+                    var properties = channel.CreateBasicProperties();
+                    properties.DeliveryMode = 2;
+                    channel.BasicPublish("", "hello", properties, body);
                     Console.WriteLine(" [x] Sent {0}", message);
                     Console.ReadLine();
                 }
             }
+        }
+
+        private static string GetMessage(string[] args)
+        {
+            return (args.Length > 0) ? string.Join(" ", args) : "Hello world";
         }
     }
 }
