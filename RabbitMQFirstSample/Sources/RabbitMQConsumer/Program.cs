@@ -15,38 +15,49 @@ namespace RabbitMQConsumer
             {
                 using (IModel channel = connection.CreateModel())
                 {
-                    channel.ExchangeDeclare("topic_logs","topic");
-                    var queueName = channel.QueueDeclare().QueueName;
-                    if (args.Length < 1)
-                    {
-                        Console.Error.WriteLine("Usage: {0} [info] [warning] [error]",
-                                           Environment.GetCommandLineArgs()[0]);
-                        Environment.ExitCode = 1;
-                        return;
-                    }
-                    foreach (var bindingKey in args)
-                    {
-                        channel.QueueBind(queueName, "topic_logs", bindingKey);
-                        
-                    }
-                    
-                    Console.WriteLine(" [*] Waiting for messages." +
-                                      "To exit press CTRL+C");
+                    channel.QueueDeclare("rpc", false, false,false,null);
+                    channel.BasicQos(0,1,false);
+                   
                     var consumer = new QueueingBasicConsumer(channel);
-                    channel.BasicConsume(queueName, true, consumer);
-
+                    channel.BasicConsume("rpc", false, consumer);
+                    Console.WriteLine(" [x] Awaiting RPC requests");
                    
                     while (true)
                     {
+                        string response = null;
                         BasicDeliverEventArgs ea = consumer.Queue.Dequeue();
 
                         byte[] body = ea.Body;
-                        string message = Encoding.UTF8.GetString(body);
-                        var routinKey = ea.RoutingKey;
-                        Console.WriteLine(" [x] Received {0}: {1}",routinKey, message);
+                        var props = ea.BasicProperties;
+                        var replyProps = channel.CreateBasicProperties();
+                        replyProps.CorrelationId = props.CorrelationId;
+                        try
+                        {
+                            string message = Encoding.UTF8.GetString(body);
+                            int n = int.Parse(message);
+                            Console.WriteLine("[.] Fib of {0}", message);
+                            response = fib(n).ToString();
+                        }
+                        catch (Exception e)
+                        {
+                            Console.WriteLine(" [.] " + e.Message);
+                            response = string.Empty;
+                        }
+                        finally
+                        {
+                            var responseBytes = Encoding.UTF8.GetBytes(response);
+                            channel.BasicPublish("", props.ReplyTo, replyProps, responseBytes);
+                            channel.BasicAck(ea.DeliveryTag, false);
+                        }
                     }
                 }
             }
+        }
+
+        private static int fib(int n)
+        {
+            if (n == 0 || n == 1) return n;
+            return fib(n - 1) + fib(n - 2);
         }
     }
 }
