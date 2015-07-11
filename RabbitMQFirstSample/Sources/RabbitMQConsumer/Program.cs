@@ -15,21 +15,35 @@ namespace RabbitMQConsumer
             {
                 using (IModel channel = connection.CreateModel())
                 {
-                    channel.ExchangeDeclare("logs","fanout");
+                    channel.ExchangeDeclare("direct_logs","direct");
                     var queueName = channel.QueueDeclare().QueueName;
-                    channel.QueueBind(queueName, "logs", "");
+                    if (args.Length < 1)
+                    {
+                        Console.Error.WriteLine("Usage: {0} [info] [warning] [error]",
+                                           Environment.GetCommandLineArgs()[0]);
+                        Environment.ExitCode = 1;
+                        return;
+                    }
+                    foreach (var severity in args)
+                    {
+                        channel.QueueBind(queueName, "direct_logs", severity);
+                        
+                    }
+                    
+                    Console.WriteLine(" [*] Waiting for messages." +
+                                      "To exit press CTRL+C");
                     var consumer = new QueueingBasicConsumer(channel);
                     channel.BasicConsume(queueName, true, consumer);
 
-                    Console.WriteLine(" [*] Waiting for messages." +
-                                      "To exit press CTRL+C");
+                   
                     while (true)
                     {
                         BasicDeliverEventArgs ea = consumer.Queue.Dequeue();
 
                         byte[] body = ea.Body;
                         string message = Encoding.UTF8.GetString(body);
-                        Console.WriteLine(" [x] Received {0}", message);
+                        var routinKey = ea.RoutingKey;
+                        Console.WriteLine(" [x] Received {0}: {1}",routinKey, message);
                     }
                 }
             }
