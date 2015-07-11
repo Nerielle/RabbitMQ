@@ -15,7 +15,7 @@ namespace RabbitMQConsumer
             {
                 using (IModel channel = connection.CreateModel())
                 {
-                    channel.ExchangeDeclare("direct_logs","direct");
+                    channel.ExchangeDeclare("topic_logs","topic");
                     var queueName = channel.QueueDeclare().QueueName;
                     if (args.Length < 1)
                     {
@@ -24,9 +24,9 @@ namespace RabbitMQConsumer
                         Environment.ExitCode = 1;
                         return;
                     }
-                    foreach (var severity in args)
+                    foreach (var bindingKey in args)
                     {
-                        channel.QueueBind(queueName, "direct_logs", severity);
+                        channel.QueueBind(queueName, "topic_logs", bindingKey);
                         
                     }
                     

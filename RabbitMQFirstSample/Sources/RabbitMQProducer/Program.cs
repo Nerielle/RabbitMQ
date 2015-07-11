@@ -14,23 +14,18 @@ namespace RabbitMQProducer
             {
                 using (IModel channel = connection.CreateModel())
                 {
-                    channel.ExchangeDeclare("direct_logs", "direct");
-                    var severity = (args.Length > 0) ? args[0] : "info";
-                    string message = GetMessage(args);
+                    channel.ExchangeDeclare("topic_logs", "topic");
+                    var routingKey = (args.Length > 0) ? args[0] : "anonymous.info";
+                    var message = (args.Length > 1)
+                                     ? string.Join(" ", args.Skip(1).ToArray())
+                                     : "Hello World!";
                     byte[] body = Encoding.UTF8.GetBytes(message);
                     
-                    channel.BasicPublish("direct_logs", severity, null, body);
-                    Console.WriteLine(" [x] Sent {0}: {1}", severity, message);
-                    Console.ReadLine();
+                    channel.BasicPublish("topic_logs", routingKey, null, body);
+                    Console.WriteLine(" [x] Sent {0}: {1}", routingKey, message);
                 }
             }
         }
-
-        private static string GetMessage(string[] args)
-        {
-            return (args.Length > 1)
-                                ? string.Join(" ", args.Skip(1).ToArray())
-                                : "Hello World!";
-        }
+        
     }
 }
