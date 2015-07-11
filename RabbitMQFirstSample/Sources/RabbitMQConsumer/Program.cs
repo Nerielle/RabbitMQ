@@ -10,13 +10,13 @@ namespace RabbitMQConsumer
     {
         private static void Main(string[] args)
         {
-            var factory = new ConnectionFactory {HostName = "localhost"};
+            var factory = new ConnectionFactory { HostName = "localhost" };
             using (IConnection connection = factory.CreateConnection())
             {
                 using (IModel channel = connection.CreateModel())
                 {
-                    channel.QueueDeclare("hello", false, false, false, null);
-
+                    channel.QueueDeclare("hello", true, false, false, null);
+                    channel.BasicQos(0, 1, false);
                     var consumer = new QueueingBasicConsumer(channel);
                     channel.BasicConsume("hello", false, consumer);
 
@@ -25,13 +25,13 @@ namespace RabbitMQConsumer
                     while (true)
                     {
                         BasicDeliverEventArgs ea = consumer.Queue.Dequeue();
-                       
+
                         byte[] body = ea.Body;
                         string message = Encoding.UTF8.GetString(body);
                         Console.WriteLine(" [x] Received {0}", message);
 
                         int dots = message.Split('.').Length - 1;
-                        Thread.Sleep(dots*1000);
+                        Thread.Sleep(dots * 1000);
                         Console.WriteLine(" [x] Done");
                         channel.BasicAck(ea.DeliveryTag, false);
                     }
