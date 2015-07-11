@@ -15,10 +15,11 @@ namespace RabbitMQConsumer
             {
                 using (IModel channel = connection.CreateModel())
                 {
-                    channel.QueueDeclare("hello", true, false, false, null);
-                    channel.BasicQos(0, 1, false);
+                    channel.ExchangeDeclare("logs","fanout");
+                    var queueName = channel.QueueDeclare().QueueName;
+                    channel.QueueBind(queueName, "logs", "");
                     var consumer = new QueueingBasicConsumer(channel);
-                    channel.BasicConsume("hello", false, consumer);
+                    channel.BasicConsume(queueName, true, consumer);
 
                     Console.WriteLine(" [*] Waiting for messages." +
                                       "To exit press CTRL+C");
@@ -29,11 +30,6 @@ namespace RabbitMQConsumer
                         byte[] body = ea.Body;
                         string message = Encoding.UTF8.GetString(body);
                         Console.WriteLine(" [x] Received {0}", message);
-
-                        int dots = message.Split('.').Length - 1;
-                        Thread.Sleep(dots * 1000);
-                        Console.WriteLine(" [x] Done");
-                        channel.BasicAck(ea.DeliveryTag, false);
                     }
                 }
             }

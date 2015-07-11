@@ -13,14 +13,12 @@ namespace RabbitMQProducer
             {
                 using (IModel channel = connection.CreateModel())
                 {
-                    channel.QueueDeclare("hello", true, false, false, null);
+                    channel.ExchangeDeclare("logs", "fanout");
 
                     string message = GetMessage(args);
                     byte[] body = Encoding.UTF8.GetBytes(message);
-                    var properties = channel.CreateBasicProperties();
-                    properties.DeliveryMode = 2;
-                    properties.SetPersistent(true);
-                    channel.BasicPublish("", "hello", properties, body);
+                    
+                    channel.BasicPublish("logs", "", null, body);
                     Console.WriteLine(" [x] Sent {0}", message);
                     Console.ReadLine();
                 }
