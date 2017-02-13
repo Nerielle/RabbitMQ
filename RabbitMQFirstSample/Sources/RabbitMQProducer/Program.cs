@@ -1,34 +1,58 @@
 ﻿using System;
 using System.Text;
+using System.Threading;
+using NLog;
 using RabbitMQ.Client;
+
 
 namespace RabbitMQProducer
 {
     internal class Program
     {
+        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
+
         private static void Main(string[] args)
         {
-            var factory = new ConnectionFactory {HostName = "localhost"};
-            using (IConnection connection = factory.CreateConnection())
+            Logger.Info("info");
+            var factory = new ConnectionFactory
             {
-                using (IModel channel = connection.CreateModel())
+                HostName = "localhost",
+                AutomaticRecoveryEnabled = true,
+                TopologyRecoveryEnabled = true
+            };
+            using (var connection = factory.CreateConnection())
+            {
+                using (var channel = connection.CreateModel())
                 {
-                    channel.QueueDeclare("hello", false, false, false, null);
+                    channel.QueueDeclare("hello", true, false, false, null);
 
-                    string message = GetMessage(args);
-                    byte[] body = Encoding.UTF8.GetBytes(message);
-                    var properties = channel.CreateBasicProperties();
-                    properties.DeliveryMode = 2;
-                    channel.BasicPublish("", "hello", properties, body);
-                    Console.WriteLine(" [x] Sent {0}", message);
-                    Console.ReadLine();
+                    while (true)
+                        try
+                        {
+                            SendMessage(args, channel);
+                            Thread.Sleep(4000);
+                        }
+                        catch (Exception ex)
+                        {
+                            Logger.Error(ex);
+                        }
                 }
             }
         }
 
+        private static void SendMessage(string[] args, IModel model)
+        {
+            var message = GetMessage(args);
+            var body = Encoding.UTF8.GetBytes(message);
+            var properties = model.CreateBasicProperties();
+            properties.DeliveryMode = 2;
+            model.BasicPublish("", "hello", properties, body);
+            Console.WriteLine(" [x] {1} Sent {0}", message, DateTime.Now);
+        }
+
         private static string GetMessage(string[] args)
         {
-            return (args.Length > 0) ? string.Join(" ", args) : "Hello world";
+            return args.Length > 0 ? string.Join(" ", args) : "Hello world";
         }
     }
 }

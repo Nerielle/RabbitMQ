@@ -48,3 +48,9 @@ bin
 /RabbitMQFirstSample/Sources/RabbitMQ.ServiceModel.dll
 /RabbitMQFirstSample/Sources/RabbitMQ.Client.dll
 /RabbitMQFirstSample/RabbitMQFirstSample.v11.suo
+/RabbitMQFirstSample/packages
+/RabbitMQFirstSample/Out
+/RabbitMQFirstSample/.vs
+*.dll
+/RabbitMQ.Client.xml
+*.user
